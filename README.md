@@ -6,6 +6,10 @@
 
 * https://github.com/watson-developer-cloud/python-sdk
 
+### IBM Cloud
+
+* https://cloud.ibm.com/
+
 ### Twitter python 
 
 * https://stackabuse.com/accessing-the-twitter-api-with-python/
