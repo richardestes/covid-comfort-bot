@@ -25,11 +25,7 @@ CovidComfortBot
 
 * https://suicidepreventionlifeline.org/
 
-FAQ
--------
 
-Support
--------
 
 LICENSE
 -------
