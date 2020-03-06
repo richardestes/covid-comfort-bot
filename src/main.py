@@ -13,10 +13,19 @@ service = ToneAnalyzerV3(
 service.set_service_url(
     'https://api.us-south.tone-analyzer.watson.cloud.ibm.com/instances/2657ddf2-a45a-4059-97b0-d04a6635b6f3')
 
+# JSON
 print("\ntone() example 1:\n")
+with open(join(os.getcwd(),
+               '../resources/tone-example.json')) as tone_json:
+    tone = service.tone(json.load(tone_json)[
+                        'text'], content_type="text/plain").get_result()
+print(json.dumps(tone, indent=2))
+
+# String
+print("\ntone() example 2:\n")
 print(
     json.dumps(
         service.tone(
-            tone_input='I am scared. This is a horrible day.',
+            tone_input='I am very happy. It is a good day.',
             content_type="text/plain").get_result(),
         indent=2))
