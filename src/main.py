@@ -5,8 +5,10 @@ from ibm_watson import ToneAnalyzerV3
 from ibm_watson.tone_analyzer_v3 import ToneInput
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 
+api_key = os.environ['IBM_API_KEY']
+print(api_key)
 authenticator = IAMAuthenticator(
-    'v34qLt5vjvnF1EFshCmLXFhTiwMFDgtTNpUyBbrycJFT')
+    api_key)
 service = ToneAnalyzerV3(
     version='2017-09-21',
     authenticator=authenticator)
