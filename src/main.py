@@ -102,28 +102,30 @@ def sentiment_analysis_filter(dictionary):
             json_dictionary = response.json()
 
             # Filters comments that have a high probability of a negative sentiment
-            for item in json_dictionary.items():
-                # print(item)
-                if(type(item) == 'dict'):
-                    dict_item = item
-                    for key, value in dict_item.items():
-                        print(key, value)
-                        # fSet = frozenset(item)
-                        # for j in json_dictionary[i].keys():
-                        #     print(j)
+            for key,value in json_dictionary.items():
+                print(key)
+                # Nested dictionary in tuple??
+                if(type(value)=='dict'):
+                    # print(value)
+                    for k,v in value.items():
+                        print(k)
+                        print(v)
+                # fSet = frozenset(item)
+                # for j in json_dictionary[i].keys():
+                #     print(j)
 
-                        # for key, value in json_dictionary.items():
-                        #     negative_value = json_dictionary['probability']['neg']
-                        #     label = json_dictionary['label']
-                        #     if negative_value >= 0.9 and label == 'neg':
-                        #         filtered_dictionary[key] = comment_text
-                        #         print('Found!')
-                        # # count = count + 1
-                        # else:
-                        #     # count = count + 1
-                        #     continue
+                # for key, value in json_dictionary.items():
+                #     negative_value = json_dictionary['probability']['neg']
+                #     label = json_dictionary['label']
+                #     if negative_value >= 0.9 and label == 'neg':
+                #         filtered_dictionary[key] = comment_text
+                #         print('Found!')
+                # # count = count + 1
+                # else:
+                #     # count = count + 1
+                #     continue
 
-                        # print(filtered_dictionary)
+                # print(filtered_dictionary)
 
 
 def create_filename_for_json():
