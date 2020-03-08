@@ -21,8 +21,6 @@ def setup_watson_service():
     # IBM Watson Setup
     ibm_api_key = os.environ['IBM_API_KEY']
     ibm_service_url = os.environ['IBM_SERVICE_URL']
-    print('IBM_API_KEY' + ibm_api_key)
-    print('IBM_SERVICE_URL' + ibm_service_url)
     authenticator = IAMAuthenticator(ibm_api_key)
     service = ToneAnalyzerV3(version='2017-09-21',
                              authenticator=authenticator)
@@ -43,8 +41,6 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
     print("Connecting to Reddit...")
     reddit_client_id = os.environ['REDDIT_CLIENT_ID']
     reddit_client_secret = os.environ['REDDIT_CLIENT_SECRET']
-    print(reddit_client_id)
-    print(reddit_client_secret)
     reddit = praw.Reddit(client_id=reddit_client_id,
                          client_secret=reddit_client_secret,
                          user_agent='<console:covid_comfort_posts:0.0.1 (by /u/covid_comfort)>',
@@ -78,34 +74,37 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
 
 def strip_emoji(text):
 
-    print(emoji.emoji_count(text))
-
     new_text = re.sub(emoji.get_emoji_regexp(), r"", text)
 
     return new_text
 
 
 def sentiment_analysis_filter(dictionary):
-    count = 0
-    for comment_text in dictionary.values():
-        # Send to sentiment analysis API
-        formatted_text = strip_emoji(comment_text)
-        headers = {'Content-Type': 'text/text; charset=utf-8'}
-        data = {"text": formatted_text}
-        print(comment_text)
-        if (count < 20):
+    # count = 0
+    for key in dictionary:
+        key_tmp = key
+        for comment_text in dictionary.values():
+            # Send to sentiment analysis API
+            formatted_text = strip_emoji(comment_text)
+            headers = {'Content-Type': 'text/text; charset=utf-8'}
+            data = {"text": formatted_text}
+            print(comment_text)
+            # if (count < 20):
             url = 'http://text-processing.com/api/sentiment/'
-            sentiment_analysis_response = requests.post(
+            sentiment_analysis_response_dictionary = requests.post(
                 url, data=data, headers=headers)
-            sentiment_analysis_json = sentiment_analysis_response.json()
-            print(sentiment_analysis_response.json())
-            # Filters comments that have a high probability of a negative sentiment
-            if sentiment_analysis_json['label'] == 'neg' and sentiment_analysis_json['probability.neg'] >= 0.9:
-                filtered_dictionary.add(dictionary.key, dictionary.value)
-                count = count + 1
-            else:
-                count = count + 1
-                continue
+            # sentiment_analysis_json=sentiment_analysis_response_dictionary.json()
+            # time.sleep(5)
+
+        # Filters comments that have a high probability of a negative sentiment
+        if sentiment_analysis_response_dictionary['label'] == 'neg' and sentiment_analysis_response_dictionary['probability']['neg'] >= 0.9:
+            filtered_dictionary[key]=comment_text
+            print('Found!')
+            # count = count + 1
+        else:
+            # count = count + 1
+            continue
+
     print(filtered_dictionary)
 
 
@@ -145,8 +144,6 @@ comment_dictionary_reply = {}
 comment_dictionary_message = {}
 sentiment_analysis_dictionary = {}
 filtered_dictionary = {}
-
-comment_count = 0
 
 reddit_grab_posts(reddit_username, reddit_password,
                   comment_dictionary_reply, comment_dictionary_message)
