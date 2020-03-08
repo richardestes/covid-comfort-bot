@@ -86,26 +86,31 @@ def sentiment_analysis_filter(dictionary):
         for comment_text in dictionary.values():
             # Send to sentiment analysis API
             formatted_text = strip_emoji(comment_text)
-            headers = {'Content-Type': 'text/text; charset=utf-8'}
-            data = {"text": formatted_text}
-            print(comment_text)
-            # if (count < 20):
-            url = 'http://text-processing.com/api/sentiment/'
-            sentiment_analysis_response_dictionary = requests.post(
-                url, data=data, headers=headers)
-            # sentiment_analysis_json=sentiment_analysis_response_dictionary.json()
-            # time.sleep(5)
+            request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
+            request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
+
+            url = "https://japerk-text-processing.p.rapidapi.com/sentiment/"
+
+            payload = "text=" + formatted_text
+            headers = {
+                'x-rapidapi-host': request_host,
+                'x-rapidapi-key': request_api_key,
+                'content-type': "application/x-www-form-urlencoded"
+                }
+            response = requests.request("POST", url, data=payload.encode('utf-8'), headers=headers)
+
+            print(type(response.text))
 
         # Filters comments that have a high probability of a negative sentiment
-        if sentiment_analysis_response_dictionary['label'] == 'neg' and sentiment_analysis_response_dictionary['probability']['neg'] >= 0.9:
-            filtered_dictionary[key]=comment_text
-            print('Found!')
-            # count = count + 1
-        else:
-            # count = count + 1
-            continue
+        # if sentiment_analysis_json['label'] == 'neg' and sentiment_analysis_json['probability']['neg'] >= 0.9:
+        #     filtered_dictionary[key]=comment_text
+        #     print('Found!')
+        #     # count = count + 1
+        # else:
+        #     # count = count + 1
+        #     continue
 
-    print(filtered_dictionary)
+    # print(filtered_dictionary)
 
 
 def create_filename_for_json():
