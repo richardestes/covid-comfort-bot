@@ -30,7 +30,22 @@ filtered_dictionary_watson = {}
 filtered_list = []
 comments_amount = 0
 
+ibm_api_key = ""
+ibm_service_url = ""
+reddit_client_id = ""
+reddit_client_secret = ""
+request_host = ""
+request_api_key = ""
 pretty_printer = pprint.PrettyPrinter(compact=True)
+
+
+def setup_env_variables():
+    ibm_api_key = os.environ['IBM_API_KEY']
+    ibm_service_url = os.environ['IBM_SERVICE_URL']
+    reddit_client_id = os.environ['REDDIT_CLIENT_ID']
+    reddit_client_secret = os.environ['REDDIT_CLIENT_SECRET']
+    request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
+    request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
 
 
 def sleep(secs):
@@ -55,8 +70,6 @@ def create_progress_bar(limit):
 
 
 def setup_watson_service():
-    ibm_api_key = os.environ['IBM_API_KEY']
-    ibm_service_url = os.environ['IBM_SERVICE_URL']
     authenticator = IAMAuthenticator(ibm_api_key)
     service = ToneAnalyzerV3(version='2017-09-21',
                              authenticator=authenticator)
@@ -75,8 +88,6 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
 
     # Bot Creation
     print("Connecting to Reddit...")
-    reddit_client_id = os.environ['REDDIT_CLIENT_ID']
-    reddit_client_secret = os.environ['REDDIT_CLIENT_SECRET']
     reddit = praw.Reddit(client_id=reddit_client_id,
                          client_secret=reddit_client_secret,
                          user_agent='<console:covid_comfort_posts:0.0.1 (by /u/covid_comfort)>',
@@ -144,8 +155,6 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
     interval_float = comments_amount / 100
     interval = math.ceil(interval_float)
     # Send to sentiment analysis API
-    request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
-    request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
     print('Sending ' + str(comments_amount) + ' to sentiment analysis...')
     progress_bar = create_progress_bar(comments_amount)
 
@@ -226,6 +235,7 @@ def send_to_watson(service):
 
 
 # Main
+setup_env_variables()
 watson_service = setup_watson_service()
 reddit_grab_posts(reddit_username, reddit_password,
                   comment_dictionary_reply, comment_dictionary_message)
