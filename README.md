@@ -27,6 +27,13 @@ CovidComfortBot
 
 
 
+## Development Resources
+
+* [Git - Updating feature branch](https://gist.github.com/santisbon/a1a60db1fb8eecd1beeacd986ae5d3ca)
+
+
+
+
 LICENSE
 -------
 
