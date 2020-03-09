@@ -25,6 +25,7 @@ comment_dictionary_reply = {}
 comment_dictionary_message = {}
 sentiment_analysis_list = []
 filtered_dictionary = {}
+filtered_list = []
 comments_amount = 0
 
 
@@ -47,18 +48,6 @@ def sleep(secs):
 def create_progress_bar(limit):
     bar = progressbar.ProgressBar(max_value=limit)
     return bar
-
-# def create_progress_bar():
-#     bar = progressbar.ProgressBar(max_value=100)
-#     return bar
-
-# # Big brain math
-# def update_progress_bar(bar, interval, count, progress):
-#     if interval % count == 0:
-#         progress = progress + 1
-#         bar.update(progress)
-#     else:
-#         return
 
 
 def setup_watson_service():
@@ -90,10 +79,11 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
                          username=reddit_username,
                          password=reddit_password
                          )
+    print('Connected! Fetching comments...')
 
     posts = top_posts_from_subreddit(reddit, 'covid19_support')
     for post in posts:
-        get_best_comments(post, 5)
+        get_best_comments(post, 1)
 
     comments_amount = len(comment_dictionary_message)
 
@@ -161,8 +151,8 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
 
     for key, value in dictionary.items():
         formatted_text = strip_emoji(value)
-        url = "https://japerk-text-processing.p.rapidapi.com/sentiment/"
 
+        url = "https://japerk-text-processing.p.rapidapi.com/sentiment/"
         payload = "text=" + formatted_text
         headers = {
             'x-rapidapi-host': request_host,
@@ -172,46 +162,21 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
         response = requests.request(
             "POST", url, data=payload.encode('utf-8'), headers=headers)
         count = count + 1
+
+        # Check if response is in json format
         if 'json' in response.headers.get('Content-Type'):
             json_dictionary = response.json()
-            # print(json_dictionary)
-            sentiment_analysis_list.append(json_dictionary)
-            time.sleep(0.1)
+            label = json_dictionary['label']
+            if label == 'neg':
+                y = json_dictionary['probability']['neg']
+                if y >= 0.9:
+                    filtered_dictionary[key] = value
         else:
             continue
-            # print('Response content is not in JSON format.')
-            # print(response)
 
-        # update_progress_bar(progress_bar, interval, count, progress)
+        time.sleep(0.1)
         progress = int(count)
         progress_bar.update(progress)
-
-    print('Done!\n')
-    filter_sentiment_analysis(sentiment_analysis_list)
-
-
-def filter_sentiment_analysis(unfiltered_list):
-    print('Filtering data...')
-
-    for item in unfiltered_list:
-        if item is dict:
-            # Filters comments that have a high probability of a negative sentiment
-            for key, value in item:
-                print(type(key))
-                print(key)
-                print(type(value))
-                print(value)
-                print('\n')
-
-                if(type(value) is dict):
-                    fd = frozendict(value)
-                    print(fd)
-                    print('\n')
-
-                    for k, v in fd.items():
-                        print(k)
-                        print(v)
-                        print('\n')
 
 
 def create_filename_for_json():
@@ -246,6 +211,6 @@ def send_to_watson(service, json_file, comment_count):
 watson_service = setup_watson_service()
 reddit_grab_posts(reddit_username, reddit_password,
                   comment_dictionary_reply, comment_dictionary_message)
-# json_filename = create_filename_for_json()
-# dump_dict_to_json(filtered_dictionary, json_filename)
-# send_to_watson(watson_service, filtered_dictionary)
+json_filename = create_filename_for_json()
+dump_dict_to_json(filtered_dictionary, json_filename)
+send_to_watson(watson_service, filtered_dictionary)
