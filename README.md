@@ -31,6 +31,8 @@ CovidComfortBot
 
 * [Git - Updating feature branch](https://gist.github.com/santisbon/a1a60db1fb8eecd1beeacd986ae5d3ca)
 
+* [PythonAnywhere - Add Environment Variables](https://help.pythonanywhere.com/pages/environment-variables-for-web-apps/)
+
 
 
 
