@@ -7,6 +7,7 @@ from datetime import date
 import praw
 import re
 import time
+import datetime
 import requests
 import getpass
 import string
@@ -15,7 +16,6 @@ import math
 import progressbar
 import emoji
 from security import encrypt_password, check_encrypted_password
-from frozendict import frozendict
 
 # Variable Setup
 reddit_username = "covid_comfort"
@@ -180,7 +180,7 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
 
 
 def create_filename_for_json():
-    now = datetime.now()
+    now = datetime.datetime.now()
     date = now.strftime("%b_%m_%I_%M_%p")
     filename = date + "_comments"
     return filename
@@ -189,21 +189,29 @@ def create_filename_for_json():
 
 
 def dump_dict_to_json(dictionary, json_filename):
-    with open(json_filename, 'w') as fp:
-        json.dump(dictionary, fp)
+    print('Dumping to json...')
+    file_path = '../resources/' + json_filename
+    with open(file_path, 'w') as json_file:
+        json.dump(dictionary, json_file)
 
 
-def send_to_watson(service, json_file, comment_count):
-    if comment_count < 88:
+def send_to_watson(service):
+    if len(filtered_dictionary) < 88:
         print('Sending to Watson...')
-        json_path = 'resources/' + json_filename
-        with open(join(os.getcwd(), json_path)) as tone_json:
-            tone = service.tone(json.load(tone_json)[
-                'text'], content_type="text/plain").get_result()
-            print(json.dumps(tone, indent=2))
-            comment_count = comment_count + 1
+        for key, value in filtered_dictionary.items():
+            comment_text = value
+            tone = service.tone({'text': comment_text},
+                                content_type='application/json'
+                                ).get_result()
+        # print(json.dumps(tone, indent=2))
+        tmp = tone['document_tone']['tones']
+        for x in tmp:
+            tone_name = x['tone_name']
+            score = x['score']
+            print(tone_name)
+            print(score)
     else:
-        print("We can't send anymore requests to Watson right now. Exiting...")
+        print("We can't send a file that big...this is awkward...")
         exit(1)
 
 
@@ -212,5 +220,7 @@ watson_service = setup_watson_service()
 reddit_grab_posts(reddit_username, reddit_password,
                   comment_dictionary_reply, comment_dictionary_message)
 json_filename = create_filename_for_json()
+file_path = '../resources/' + json_filename
 dump_dict_to_json(filtered_dictionary, json_filename)
-send_to_watson(watson_service, filtered_dictionary)
+watson_count = len(filtered_dictionary)
+send_to_watson(watson_service)
