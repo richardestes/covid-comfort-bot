@@ -96,7 +96,12 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
                          )
     print('Connected! Fetching comments...')
 
-    posts = top_posts_from_subreddit(reddit, 'coronavirus')
+    try:
+        posts = top_posts_from_subreddit(reddit, 'covid19_support')
+    except praw.exceptions.ServerError:
+        print('Something went wrong on the Reddit server side. Trying again in 30 seconds.')
+        sleep(30)
+
     for post in posts:
         get_best_comments(post, 3)
 
