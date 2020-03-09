@@ -40,10 +40,10 @@ pretty_printer = pprint.PrettyPrinter(compact=True)
 
 
 def setup_env_variables():
+    reddit_client_id = os.environ['REDDIT_COVID_CLIENT_ID']
+    reddit_client_secret = os.environ['REDDIT_COVID_CLIENT_SECRET']
     ibm_api_key = os.environ['IBM_API_KEY']
     ibm_service_url = os.environ['IBM_SERVICE_URL']
-    reddit_client_id = os.environ['REDDIT_CLIENT_ID']
-    reddit_client_secret = os.environ['REDDIT_CLIENT_SECRET']
     request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
     request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
 
@@ -88,8 +88,8 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
 
     # Bot Creation
     print("Connecting to Reddit...")
-    reddit = praw.Reddit(client_id=reddit_client_id,
-                         client_secret=reddit_client_secret,
+    reddit = praw.Reddit(client_id='blsLAro7uLYZaw',
+                         client_secret='i7yvoPxQkQjComHItMzUwIkb6Fo',
                          user_agent='<console:covid_comfort_posts:0.0.1 (by /u/covid_comfort)>',
                          username=reddit_username,
                          password=reddit_password
@@ -237,8 +237,8 @@ def send_to_watson(service):
 # Main
 setup_env_variables()
 watson_service = setup_watson_service()
-reddit_grab_posts(reddit_username, reddit_password,
-                  comment_dictionary_reply, comment_dictionary_message)
+reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply,
+                  comment_dictionary_message)
 json_filename = create_filename_for_json()
 file_path = '../resources/' + json_filename
 dump_dict_to_json(filtered_dictionary, json_filename)
