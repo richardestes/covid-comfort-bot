@@ -39,7 +39,7 @@ request_api_key = ""
 pretty_printer = pprint.PrettyPrinter(compact=True)
 
 
-def setup_environ_variables():
+def setup_env_variables():
     ibm_api_key = os.environ['IBM_API_KEY']
     ibm_service_url = os.environ['IBM_SERVICE_URL']
     reddit_client_id = os.environ['REDDIT_CLIENT_ID']
@@ -235,6 +235,7 @@ def send_to_watson(service):
 
 
 # Main
+setup_env_variables()
 watson_service = setup_watson_service()
 reddit_grab_posts(reddit_username, reddit_password,
                   comment_dictionary_reply, comment_dictionary_message)
