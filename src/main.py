@@ -17,7 +17,9 @@ import progressbar
 import pprint
 import emoji
 from security import encrypt_password, check_encrypted_password
+from dotenv import load_dotenv
 
+load_dotenv()
 # Variable Setup
 reddit_username = "covid_comfort"
 reddit_password = getpass.getpass("Enter the bot password: ")
@@ -30,22 +32,14 @@ filtered_dictionary_watson = {}
 filtered_list = []
 comments_amount = 0
 
-ibm_api_key = ""
-ibm_service_url = ""
-reddit_client_id = ""
-reddit_client_secret = ""
-request_host = ""
-request_api_key = ""
+ibm_api_key = os.environ['IBM_API_KEY']
+ibm_service_url = os.environ['IBM_SERVICE_URL']
+reddit_client_id = os.environ['REDDIT_COVID_CLIENT_ID']
+reddit_client_secret = os.environ['REDDIT_COVID_CLIENT_SECRET']
+request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
+request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
+
 pretty_printer = pprint.PrettyPrinter(compact=True)
-
-
-def setup_env_variables():
-    reddit_client_id = os.environ['REDDIT_COVID_CLIENT_ID']
-    reddit_client_secret = os.environ['REDDIT_COVID_CLIENT_SECRET']
-    ibm_api_key = os.environ['IBM_API_KEY']
-    ibm_service_url = os.environ['IBM_SERVICE_URL']
-    request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
-    request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
 
 
 def sleep(secs):
@@ -88,8 +82,8 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
 
     # Bot Creation
     print("Connecting to Reddit...")
-    reddit = praw.Reddit(client_id='blsLAro7uLYZaw',
-                         client_secret='i7yvoPxQkQjComHItMzUwIkb6Fo',
+    reddit = praw.Reddit(client_id=reddit_client_id,
+                         client_secret=reddit_client_secret,
                          user_agent='<console:covid_comfort_posts:0.0.1 (by /u/covid_comfort)>',
                          username=reddit_username,
                          password=reddit_password
@@ -240,7 +234,6 @@ def send_to_watson(service):
 
 
 # Main
-setup_env_variables()
 watson_service = setup_watson_service()
 reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply,
                   comment_dictionary_message)
