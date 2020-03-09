@@ -15,10 +15,50 @@ import math
 import progressbar
 import emoji
 from security import encrypt_password, check_encrypted_password
+from frozendict import frozendict
+
+# Variable Setup
+reddit_username = "covid_comfort"
+reddit_password = getpass.getpass("Enter the bot password: ")
+
+comment_dictionary_reply = {}
+comment_dictionary_message = {}
+sentiment_analysis_list = []
+filtered_dictionary = {}
+comments_amount = 0
+
+
+def sleep(secs):
+    # 900 = 15 mins
+    # 1800 = 30 mins
+    # 3600 = 1 hour
+    # 7200 = 2 hours
+    # 43200 = 12 hours
+    # 86400 = 24 hours
+    bar = progressbar.ProgressBar(max_value=100)
+    for i in range(secs):
+        time.sleep(1)
+        tmp = i / secs * 100
+        if ((tmp % 1) == 0):
+            tmpInt = int(tmp)
+            bar.update(tmpInt)
+
+
+def create_progress_bar():
+    bar = progressbar.ProgressBar(max_value=100)
+    return bar
+
+
+# Big brain math
+def update_progress_bar(bar, interval, count, progress):
+    if interval % count == 0:
+        progress = progress + 1
+        bar.update(progress)
+    else:
+        return
 
 
 def setup_watson_service():
-    # IBM Watson Setup
     ibm_api_key = os.environ['IBM_API_KEY']
     ibm_service_url = os.environ['IBM_SERVICE_URL']
     authenticator = IAMAuthenticator(ibm_api_key)
@@ -48,28 +88,54 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
                          password=reddit_password
                          )
 
-    # Add Reddit comments from top posts of the hour to our dictionaries
-    # This is one request
-    for submission in reddit.subreddit('covid19_support').top('week'):
-        submission.comments.replace_more(limit=None)
-        for comment in submission.comments.list():
-            if comment.id:
-                comment_dictionary_reply[comment.id] = comment.body
-            if comment.author:
-                comment_dictionary_message[comment.author.name] = comment.body
-    # reply_text = "hello i am a bot!"
-    # submission.reply(reply_text)
-    # reddit.redditor('dj505Gaming').message('TEST', 'This happened!')
-    # print("Replied to post.")
+    posts = top_posts_from_subreddit(reddit, 'covid19_support')
+    for post in posts:
+        get_best_comments(post, 5)
+
+    comments_amount = len(comment_dictionary_message)
 
     # Check if dictionary is empty.
     if comment_dictionary_message:
-        print('Grabbed comments from Reddit!')
+        print('Grabbed ' + str(comments_amount) + ' comments from Reddit!')
+        send_to_sentiment_analysis(
+            comment_dictionary_message, comments_amount)
         # print(json.dumps(comment_dictionary_message,
         #                  indent=4, separators=(',', ': ')))
     else:
         print('No comments found. Exiting...')
         exit(1)
+
+
+def get_best_comments(submission, limit):
+    # Set comment sort to best before retrieving comments
+    submission.comment_sort = 'best'
+    # Limit to, at most, 5 top level comments
+    submission.comment_limit = limit
+    # Fetch the comments and print each comment body
+    # This must be done _after_ the above lines or they won't take affect.
+    for top_level_comment in submission.comments:
+        if isinstance(top_level_comment, praw.models.MoreComments):
+            continue
+        # Here you can fetch data off the comment.
+        # For the sake of example, we're just printing the comment body.
+        # print(top_level_comment.body)
+        if top_level_comment.id:
+            comment_dictionary_reply[top_level_comment.id] = top_level_comment.body
+        if top_level_comment.author:
+            comment_dictionary_message[top_level_comment.author.name] = top_level_comment.body
+
+
+def top_posts_from_subreddit(reddit, sub_name):
+    # This assumes you have a global "reddit" object.
+    # You may prefer to pass the "reddit" object in as a
+    # parameter to this function.
+    subreddit = reddit.subreddit(sub_name)
+    top_posts = []
+    # The default for the 'top' function is "top of all time".
+    for post in subreddit.top():
+        top_posts.append(post)
+    # You'll have _up to_, but no more than, 1000 submissions by now.
+    return top_posts
 
 
 def strip_emoji(text):
@@ -79,53 +145,67 @@ def strip_emoji(text):
     return new_text
 
 
-def sentiment_analysis_filter(dictionary):
-    # count = 0
-    for key in dictionary:
-        key_tmp = key
-        for comment_text in dictionary.values():
-            # Send to sentiment analysis API
-            formatted_text = strip_emoji(comment_text)
-            request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
-            request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
+def send_to_sentiment_analysis(dictionary, comments_amount):
+    count = 0
+    progress = 0
+    interval_float = comments_amount / 100
+    interval = math.ceil(interval_float)
+    # Send to sentiment analysis API
+    request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
+    request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
+    print('Sending ' + str(comments_amount) + ' to sentiment analysis...')
+    progress_bar = create_progress_bar()
 
-            url = "https://japerk-text-processing.p.rapidapi.com/sentiment/"
+    for key, value in dictionary.items():
+        formatted_text = strip_emoji(value)
+        url = "https://japerk-text-processing.p.rapidapi.com/sentiment/"
 
-            payload = "text=" + formatted_text
-            headers = {
-                'x-rapidapi-host': request_host,
-                'x-rapidapi-key': request_api_key,
-                'content-type': "application/x-www-form-urlencoded"
-            }
-            response = requests.request(
-                "POST", url, data=payload.encode('utf-8'), headers=headers)
+        payload = "text=" + formatted_text
+        headers = {
+            'x-rapidapi-host': request_host,
+            'x-rapidapi-key': request_api_key,
+            'content-type': "application/x-www-form-urlencoded"
+        }
+        response = requests.request(
+            "POST", url, data=payload.encode('utf-8'), headers=headers)
+        count = count + 1
+        if 'json' in response.headers.get('Content-Type'):
             json_dictionary = response.json()
+            # print(json_dictionary)
+            sentiment_analysis_list.append(json_dictionary)
+            time.sleep(0.1)
+        else:
+            continue
+            # print('Response content is not in JSON format.')
+            # print(response)
 
+        update_progress_bar(progress_bar, interval, count, progress)
+
+    filter_sentiment_analysis(sentiment_analysis_list)
+
+
+def filter_sentiment_analysis(list):
+    print('Filtering data...')
+
+    for item in list:
+        if item is dict:
             # Filters comments that have a high probability of a negative sentiment
-            for key,value in json_dictionary.items():
+            for key, value in item:
+                print(type(key))
                 print(key)
-                # Nested dictionary in tuple??
-                if(type(value)=='dict'):
-                    # print(value)
-                    for k,v in value.items():
+                print(type(value))
+                print(value)
+                print('\n')
+
+                if(type(value) is dict):
+                    fd = frozendict(value)
+                    print(fd)
+                    print('\n')
+
+                    for k, v in fd.items():
                         print(k)
                         print(v)
-                # fSet = frozenset(item)
-                # for j in json_dictionary[i].keys():
-                #     print(j)
-
-                # for key, value in json_dictionary.items():
-                #     negative_value = json_dictionary['probability']['neg']
-                #     label = json_dictionary['label']
-                #     if negative_value >= 0.9 and label == 'neg':
-                #         filtered_dictionary[key] = comment_text
-                #         print('Found!')
-                # # count = count + 1
-                # else:
-                #     # count = count + 1
-                #     continue
-
-                # print(filtered_dictionary)
+                        print('\n')
 
 
 def create_filename_for_json():
@@ -156,18 +236,10 @@ def send_to_watson(service, json_file, comment_count):
         exit(1)
 
 
-reddit_username = "covid_comfort"
-reddit_password = getpass.getpass("Enter the bot password: ")
+# Main
 watson_service = setup_watson_service()
-
-comment_dictionary_reply = {}
-comment_dictionary_message = {}
-sentiment_analysis_dictionary = {}
-filtered_dictionary = {}
-
 reddit_grab_posts(reddit_username, reddit_password,
                   comment_dictionary_reply, comment_dictionary_message)
-sentiment_analysis_filter(comment_dictionary_message)
 # json_filename = create_filename_for_json()
 # dump_dict_to_json(filtered_dictionary, json_filename)
 # send_to_watson(watson_service, filtered_dictionary)
