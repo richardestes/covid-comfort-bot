@@ -14,6 +14,7 @@ import string
 import logging
 import math
 import progressbar
+import pprint
 import emoji
 from security import encrypt_password, check_encrypted_password
 
@@ -25,8 +26,11 @@ comment_dictionary_reply = {}
 comment_dictionary_message = {}
 sentiment_analysis_list = []
 filtered_dictionary = {}
+filtered_dictionary_watson = {}
 filtered_list = []
 comments_amount = 0
+
+pretty_printer = pprint.PrettyPrinter(compact=True)
 
 
 def sleep(secs):
@@ -81,9 +85,9 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
                          )
     print('Connected! Fetching comments...')
 
-    posts = top_posts_from_subreddit(reddit, 'covid19_support')
+    posts = top_posts_from_subreddit(reddit, 'coronavirus')
     for post in posts:
-        get_best_comments(post, 1)
+        get_best_comments(post, 3)
 
     comments_amount = len(comment_dictionary_message)
 
@@ -92,49 +96,45 @@ def reddit_grab_posts(reddit_username, reddit_password, comment_dictionary_reply
         print('Grabbed ' + str(comments_amount) + ' comments from Reddit!')
         send_to_sentiment_analysis(
             comment_dictionary_message, comments_amount)
-        # print(json.dumps(comment_dictionary_message,
-        #                  indent=4, separators=(',', ': ')))
     else:
         print('No comments found. Exiting...')
         exit(1)
 
 
+# Source: https://www.reddit.com/r/redditdev/comments/9ijv1q/how_can_i_print_just_the_first_5_top_comments_of/
 def get_best_comments(submission, limit):
     # Set comment sort to best before retrieving comments
     submission.comment_sort = 'best'
-    # Limit to, at most, 5 top level comments
+    # Limit top level comments
     submission.comment_limit = limit
     # Fetch the comments and print each comment body
-    # This must be done _after_ the above lines or they won't take affect.
     for top_level_comment in submission.comments:
         if isinstance(top_level_comment, praw.models.MoreComments):
             continue
-        # Here you can fetch data off the comment.
-        # For the sake of example, we're just printing the comment body.
-        # print(top_level_comment.body)
         if top_level_comment.id:
             comment_dictionary_reply[top_level_comment.id] = top_level_comment.body
         if top_level_comment.author:
             comment_dictionary_message[top_level_comment.author.name] = top_level_comment.body
 
 
+# Source: https://www.reddit.com/r/redditdev/comments/9ijv1q/how_can_i_print_just_the_first_5_top_comments_of/
 def top_posts_from_subreddit(reddit, sub_name):
-    # This assumes you have a global "reddit" object.
-    # You may prefer to pass the "reddit" object in as a
-    # parameter to this function.
     subreddit = reddit.subreddit(sub_name)
     top_posts = []
     # The default for the 'top' function is "top of all time".
-    for post in subreddit.top():
+    for post in subreddit.top('day'):
         top_posts.append(post)
-    # You'll have _up to_, but no more than, 1000 submissions by now.
+    # up to, but no more than, 1000 submissions returned.
     return top_posts
 
 
+def remove_newline_characters(text):
+    new_text = text.replace("\n", "")
+    return new_text
+
+
 def strip_emoji(text):
-
     new_text = re.sub(emoji.get_emoji_regexp(), r"", text)
-
     return new_text
 
 
@@ -150,8 +150,8 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
     progress_bar = create_progress_bar(comments_amount)
 
     for key, value in dictionary.items():
-        formatted_text = strip_emoji(value)
-
+        text_no_emojis = strip_emoji(value)
+        formatted_text = remove_newline_characters(text_no_emojis)
         url = "https://japerk-text-processing.p.rapidapi.com/sentiment/"
         payload = "text=" + formatted_text
         headers = {
@@ -169,7 +169,7 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
             label = json_dictionary['label']
             if label == 'neg':
                 y = json_dictionary['probability']['neg']
-                if y >= 0.9:
+                if y >= 0.7:
                     filtered_dictionary[key] = value
         else:
             continue
@@ -177,6 +177,8 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
         time.sleep(0.1)
         progress = int(count)
         progress_bar.update(progress)
+    print("\n")
+    print('Done!')
 
 
 def create_filename_for_json():
@@ -196,20 +198,28 @@ def dump_dict_to_json(dictionary, json_filename):
 
 
 def send_to_watson(service):
-    if len(filtered_dictionary) < 88:
+    count = 0
+    if watson_count < 88 and watson_count > 0:
         print('Sending to Watson...')
+        progress_bar = create_progress_bar(watson_count)
         for key, value in filtered_dictionary.items():
             comment_text = value
             tone = service.tone({'text': comment_text},
                                 content_type='application/json'
                                 ).get_result()
+            count = count + 1
+            progress = int(count)
+            progress_bar.update(progress)
+            tmp = tone['document_tone']['tones']
+            for x in tmp:
+                tone_name = x['tone_name']
+                score = x['score']
+                if tone_name == 'Sadness':
+                    filtered_dictionary_watson[value] = tone_name
+                # print(tone_name)
+                # print(score)
         # print(json.dumps(tone, indent=2))
-        tmp = tone['document_tone']['tones']
-        for x in tmp:
-            tone_name = x['tone_name']
-            score = x['score']
-            print(tone_name)
-            print(score)
+
     else:
         print("We can't send a file that big...this is awkward...")
         exit(1)
@@ -224,3 +234,4 @@ file_path = '../resources/' + json_filename
 dump_dict_to_json(filtered_dictionary, json_filename)
 watson_count = len(filtered_dictionary)
 send_to_watson(watson_service)
+pretty_printer.pprint(filtered_dictionary_watson)
