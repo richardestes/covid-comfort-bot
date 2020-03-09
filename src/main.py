@@ -44,18 +44,21 @@ def sleep(secs):
             bar.update(tmpInt)
 
 
-def create_progress_bar():
-    bar = progressbar.ProgressBar(max_value=100)
+def create_progress_bar(limit):
+    bar = progressbar.ProgressBar(max_value=limit)
     return bar
 
+# def create_progress_bar():
+#     bar = progressbar.ProgressBar(max_value=100)
+#     return bar
 
-# Big brain math
-def update_progress_bar(bar, interval, count, progress):
-    if interval % count == 0:
-        progress = progress + 1
-        bar.update(progress)
-    else:
-        return
+# # Big brain math
+# def update_progress_bar(bar, interval, count, progress):
+#     if interval % count == 0:
+#         progress = progress + 1
+#         bar.update(progress)
+#     else:
+#         return
 
 
 def setup_watson_service():
@@ -147,14 +150,14 @@ def strip_emoji(text):
 
 def send_to_sentiment_analysis(dictionary, comments_amount):
     count = 0
-    progress = 0
+    # progress = 0
     interval_float = comments_amount / 100
     interval = math.ceil(interval_float)
     # Send to sentiment analysis API
     request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
     request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
     print('Sending ' + str(comments_amount) + ' to sentiment analysis...')
-    progress_bar = create_progress_bar()
+    progress_bar = create_progress_bar(comments_amount)
 
     for key, value in dictionary.items():
         formatted_text = strip_emoji(value)
@@ -179,15 +182,18 @@ def send_to_sentiment_analysis(dictionary, comments_amount):
             # print('Response content is not in JSON format.')
             # print(response)
 
-        update_progress_bar(progress_bar, interval, count, progress)
+        # update_progress_bar(progress_bar, interval, count, progress)
+        progress = int(count)
+        progress_bar.update(progress)
 
+    print('Done!\n')
     filter_sentiment_analysis(sentiment_analysis_list)
 
 
-def filter_sentiment_analysis(list):
+def filter_sentiment_analysis(unfiltered_list):
     print('Filtering data...')
 
-    for item in list:
+    for item in unfiltered_list:
         if item is dict:
             # Filters comments that have a high probability of a negative sentiment
             for key, value in item:
