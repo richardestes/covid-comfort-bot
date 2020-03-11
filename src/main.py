@@ -4,6 +4,7 @@ from os.path import join
 from ibm_watson import ToneAnalyzerV3
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from datetime import date
+from dotenv import load_dotenv
 import praw
 import re
 import time
@@ -17,12 +18,18 @@ import progressbar
 import pprint
 import emoji
 from security import encrypt_password, check_encrypted_password
-from dotenv import load_dotenv
 
-load_dotenv()
 # Variable Setup
 reddit_username = "covid_comfort"
 reddit_password = getpass.getpass("Enter the bot password: ")
+
+load_dotenv()
+ibm_api_key = os.environ['IBM_API_KEY']
+ibm_service_url = os.environ['IBM_SERVICE_URL']
+reddit_client_id = os.environ['REDDIT_COVID_CLIENT_ID']
+reddit_client_secret = os.environ['REDDIT_COVID_CLIENT_SECRET']
+request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
+request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
 
 comment_dictionary_reply = {}
 comment_dictionary_message = {}
@@ -32,12 +39,12 @@ filtered_dictionary_watson = {}
 filtered_list = []
 comments_amount = 0
 
-ibm_api_key = os.environ['IBM_API_KEY']
-ibm_service_url = os.environ['IBM_SERVICE_URL']
-reddit_client_id = os.environ['REDDIT_COVID_CLIENT_ID']
-reddit_client_secret = os.environ['REDDIT_COVID_CLIENT_SECRET']
-request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
-request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
+# ibm_api_key = os.environ['IBM_API_KEY']
+# ibm_service_url = os.environ['IBM_SERVICE_URL']
+# reddit_client_id = os.environ['REDDIT_COVID_CLIENT_ID']
+# reddit_client_secret = os.environ['REDDIT_COVID_CLIENT_SECRET']
+# request_host = os.environ['SENTIMENT_ANALYSIS_HOST']
+# request_api_key = os.environ['SENTIMENT_ANALYSIS_API_KEY']
 
 pretty_printer = pprint.PrettyPrinter(compact=True)
 
