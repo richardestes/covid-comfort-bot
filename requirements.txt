@@ -11,7 +11,7 @@ praw==6.5.1
 prawcore==1.0.1
 progressbar2==3.50.0
 pycodestyle==2.5.0
-PyJWT==1.7.1
+PyJWT==2.4.0
 python-dateutil==2.8.1
 python-utils==2.4.0
 requests==2.23.0
